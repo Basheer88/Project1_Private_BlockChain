@@ -74,14 +74,21 @@ class Blockchain {
               }
             // SHA256 requires a string of data
             block.hash = SHA256(JSON.stringify(block)).toString();
-            // add block to chain
-            self.chain.push(block);
-            if(self){
-                resolve(block);
+            // Check Chain Validation
+            let checkValidation = await this.validateChain();
+            if(checkValidation.length == 0) {
+                // add block to chain
+                self.chain.push(block);
+                if(self){
+                    resolve(block);
+                }
+                else {
+                    reject(Error("It Broke"));
+                }       
             }
-            else{
-                reject(Error("It Broke"));
-            }       
+            else {
+                reject(Error("Chain Validation Failed "));
+            } 
         });
     }
 
@@ -185,13 +192,15 @@ class Blockchain {
         let self = this;
         let stars = [];
         return new Promise((resolve, reject) => {
-            stars = self.chain.filter(st => st.getBData().owner ==address);
-            if(stars.length>0){
-                resolve(stars);
-            }
-            else{
-                reject(Error('No stars found for this address : ' + address));
-            }            
+            self.chain.forEach(async(b)=> {
+                let data = await b.getBData();
+                if(data){
+                    if(data.owner === address){
+                      stars.push(data);
+                    }
+                }
+            })
+            resolve(stars);       
         });
     }
 
@@ -206,7 +215,7 @@ class Blockchain {
         let errorLog = [];
         return new Promise(async (resolve, reject) => {
             for(let i=0; i<self.chain.length; i++){
-                if(!self.chain[i].BlockClass.validate()){
+                if(!self.chain[i].validate()){
                     errorLog.push({error: 'Block validation failed', block: self.chain[i]});
                 }
                 if(i>0){
