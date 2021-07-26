@@ -119,7 +119,7 @@ class BlockchainController {
 
     // This endpoint to validate the Chain
     validateChain() {
-        this.get("/validateChain", async(req, res)=> {
+        this.app.get("/validateChain", async(req, res)=> {
             let valid = await this.blockchain.validateChain();
             if( valid.length != 0 ){
                 return res.status(500).send("Invalid Chain");
